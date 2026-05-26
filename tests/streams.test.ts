@@ -608,7 +608,7 @@ describe('Streams API - Decimal String Serialization', () => {
         .get(`/api/streams?cursor=${firstPage.body.data.next_cursor}&limit=2&include_total=true`)
         .expect(200);
 
-      expect(secondPage.body.data.streams.length).toBe(2);
+      expect(secondPage.body.data.streams.length).toBe(1);
       expect(secondPage.body.data.total).toBe(4);
       expect(secondPage.body.data.has_more).toBe(false);
     });

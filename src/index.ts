@@ -10,6 +10,7 @@
  */
 
 import http from 'node:http';
+import { initTracing } from './tracing/index.js';
 import { createApp } from './app.js';
 import { gracefulShutdown, addShutdownHook } from './shutdown.js';
 import { logger } from './lib/logger.js';
@@ -19,6 +20,9 @@ import { createStreamHub, getStreamHub } from './ws/hub.js';
 
 // Export a pre-built app instance for use in tests and other consumers.
 export { app } from './app.js';
+
+// Initialize telemetry before app import side-effects
+initTracing();
 
 // Configuration
 const PORT = parseInt(process.env.PORT || '3000', 10);

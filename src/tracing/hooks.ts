@@ -458,3 +458,40 @@ export function getTracer(): Tracer {
 export function resetTracer(): void {
   globalTracer = null;
 }
+
+/**
+ * Attribute keys that may contain personally identifiable information.
+ */
+const PII_ATTRIBUTE_PATTERNS = [/password/i, /token/i, /secret/i, /authorization/i, /email/i];
+
+export function scrubSpanAttributes(attributes: Record<string, unknown>): Record<string, unknown> {
+  const scrubbed: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(attributes)) {
+    scrubbed[key] = PII_ATTRIBUTE_PATTERNS.some((pattern) => pattern.test(key))
+      ? '[REDACTED]'
+      : value;
+  }
+  return scrubbed;
+}
+
+/**
+ * Helper for business-level spans with PII-safe attributes.
+ */
+export async function traceBusinessOperation<T>(
+  operationName: string,
+  correlationId: string,
+  attributes: Record<string, unknown>,
+  fn: (span: Span) => Promise<T>,
+): Promise<T> {
+  return traceSpan(
+    `biz.${operationName}`,
+    correlationId,
+    scrubSpanAttributes(attributes),
+    async (span) => {
+      getTracer().recordEvent(span, 'business.operation.start', { operationName });
+      const result = await fn(span);
+      getTracer().recordEvent(span, 'business.operation.end', { operationName });
+      return result;
+    },
+  );
+}
